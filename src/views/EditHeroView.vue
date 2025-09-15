@@ -6,14 +6,6 @@
         <p>Carregando informações do herói...</p>
       </div>
 
-      <div v-else-if="loadError" class="error-container">
-        <h2>Erro ao carregar herói</h2>
-        <p>{{ loadError }}</p>
-        <router-link to="/heroes" class="btn btn-primary">
-          Voltar para Lista
-        </router-link>
-      </div>
-
       <div v-else class="edit-form-container">
         <div class="page-header">
           <h1>Editar Herói</h1>
@@ -146,6 +138,7 @@
 
 <script>
 import { heroesApi, superpowersApi } from '@/services/api'
+import { notify } from "@kyvg/vue3-notification";
 
 export default {
   name: 'EditHeroView',
@@ -164,7 +157,6 @@ export default {
       loading: false,
       loadingSuperpowers: false,
       submitting: false,
-      loadError: null,
       errors: {}
     }
   },
@@ -172,7 +164,11 @@ export default {
     this.heroId = this.$route.params.id
     
     if (!this.heroId) {
-      this.loadError = 'ID do herói não fornecido'
+      notify({
+        type: 'error',
+        title: 'Erro',
+        text: 'ID do herói não fornecido'
+      })
       return
     }
 
@@ -184,7 +180,6 @@ export default {
   methods: {
     async loadHero() {
       this.loading = true
-      this.loadError = null
 
       try {
         const response = await heroesApi.getById(this.heroId)
@@ -198,13 +193,11 @@ export default {
         this.form.superpowersIds = hero.superpowers ? hero.superpowers.map(sp => sp.id) : []
 
       } catch (error) {
-        console.error('Error loading hero:', error)
-        
-        if (error.response && error.response.status === 404) {
-          this.loadError = 'Herói não encontrado'
-        } else {
-          this.loadError = 'Erro ao carregar as informações do herói'
-        }
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error.message || error
+        })
       } finally {
         this.loading = false
       }
@@ -212,11 +205,17 @@ export default {
 
     async loadSuperpowers() {
       this.loadingSuperpowers = true
+
       try {
         const response = await superpowersApi.getAll()
         this.superpowers = response.data || []
       } catch (error) {
-        console.error('Error loading superpowers:', error)
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error.message || error
+        })
+
         this.superpowers = []
       } finally {
         this.loadingSuperpowers = false
@@ -290,7 +289,12 @@ export default {
           superpowersIds: this.form.superpowersIds
         }
 
-        await heroesApi.update(this.heroId, heroData)
+        const response = await heroesApi.update(this.heroId, heroData)
+        notify({
+          type: 'success',
+          title: 'Sucesso',
+          text: response.data.message
+        })
         
         this.$router.push(`/heroes/${this.heroId}`)
         
@@ -315,7 +319,11 @@ export default {
             }
           }
         } else {
-          this.loadError = error.message;
+          notify({
+            type: 'error',
+            title: 'Erro',
+            text: error.message || error
+          })
         }
       } finally {
         this.submitting = false
@@ -332,7 +340,7 @@ export default {
   padding: 20px;
 }
 
-.loading-container, .error-container {
+.loading-container {
   text-align: center;
   padding: 60px 20px;
 }
@@ -350,16 +358,6 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.error-container h2 {
-  color: #e74c3c;
-  margin-bottom: 15px;
-}
-
-.error-container p {
-  color: #7f8c8d;
-  margin-bottom: 30px;
 }
 
 .page-header {

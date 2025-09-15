@@ -14,15 +14,6 @@
         <p>Carregando informações do heróis...</p>
       </div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="error-container">
-        <h2>Erro ao carregar herói</h2>
-        <p>{{ error }}</p>
-        <router-link to="/heroes" class="btn btn-primary">
-          Voltar para Lista
-        </router-link>
-      </div>
-
       <!-- Empty state -->
       <div v-else-if="heroes.length === 0" class="empty-state">
         <h3>Nenhum super-herói encontrado</h3>
@@ -96,9 +87,6 @@
             {{ deleting ? 'Excluindo...' : 'Excluir' }}
           </button>
         </div>
-
-        <!-- Delete Error state -->
-        <div v-if="deleteError" class="error-message">{{ deleteError }}</div>
       </div>
     </div>
   </div>
@@ -106,6 +94,7 @@
 
 <script>
 import { heroesApi } from '@/services/api'
+import { notify } from "@kyvg/vue3-notification";
 
 export default {
   name: 'HeroesView',
@@ -113,8 +102,6 @@ export default {
     return {
       heroes: [],
       loading: false,
-      error: null,
-      deleteError: null,
       showDeleteModal: false,
       heroToDelete: null,
       deleting: false
@@ -126,7 +113,6 @@ export default {
   methods: {
     async loadHeroes() {
       this.loading = true
-      this.error = null
       
       try {
         const response = await heroesApi.getAll()
@@ -139,8 +125,11 @@ export default {
           this.heroes = []
         }
       } catch (error) {
-        console.error('Error loading heroes:', error)
-        this.error = error.message || 'Erro ao carregar os heróis. Tente novamente.'
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error.message || error
+        })
       } finally {
         this.loading = false
       }
@@ -165,15 +154,22 @@ export default {
       if (!this.heroToDelete) return
 
       this.deleting = true
-      this.deleteError = null
 
       try {
-        await heroesApi.delete(this.heroToDelete.id)
+        const response = await heroesApi.delete(this.heroToDelete.id)
         await this.loadHeroes()
         this.cancelDelete()
+        notify({
+          type: 'success',
+          title: 'Sucesso',
+          text: response.data.message
+        })
       } catch (error) {
-        console.error('Error deleting hero:', error)
-        this.deleteError = error.message || 'Erro ao excluir o herói. Tente novamente.'
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error
+        })
       } finally {
         this.deleting = false
       }
@@ -189,7 +185,7 @@ export default {
   padding: 20px;
 }
 
-.loading-container, .error-container {
+.loading-container {
   text-align: center;
   padding: 60px 20px;
 }

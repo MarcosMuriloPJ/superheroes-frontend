@@ -22,6 +22,8 @@
       <p>&copy; 2025 Super Heroes Manager. Desenvolvido com Vue.js e .NET Core.</p>
     </div>
   </footer>
+  
+  <notifications />
 </template>
 
 <script>

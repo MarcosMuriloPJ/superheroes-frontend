@@ -7,15 +7,6 @@
         <p>Carregando informações do herói...</p>
       </div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="error-container">
-        <h2>Erro ao carregar herói</h2>
-        <p>{{ error }}</p>
-        <router-link to="/heroes" class="btn btn-primary">
-          Voltar para Lista
-        </router-link>
-      </div>
-
       <!-- Hero details -->
       <div v-else-if="hero" class="hero-details">
         <div class="hero-header">
@@ -138,6 +129,7 @@
 
 <script>
 import { heroesApi } from '@/services/api'
+import { notify } from "@kyvg/vue3-notification";
 
 export default {
   name: 'HeroDetailView',
@@ -145,7 +137,6 @@ export default {
     return {
       hero: null,
       loading: false,
-      error: null,
       showDeleteModal: false,
       deleting: false
     }
@@ -158,20 +149,25 @@ export default {
       const heroId = this.$route.params.id
       
       if (!heroId) {
-        this.error = 'ID do herói não fornecido'
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: 'ID do herói não fornecido'
+        })
         return
       }
 
       this.loading = true
-      this.error = null
 
       try {
         const response = await heroesApi.getById(heroId)
         this.hero = response.data
       } catch (error) {
-        console.error('Error loading hero:', error)
-        
-        this.error = error.message || 'Erro ao carregar o herói. Tente novamente.'
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error.message || error
+        })
       } finally {
         this.loading = false
       }
@@ -239,7 +235,7 @@ export default {
   padding: 20px;
 }
 
-.loading-container, .error-container {
+.loading-container {
   text-align: center;
   padding: 60px 20px;
 }
@@ -257,16 +253,6 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.error-container h2 {
-  color: #e74c3c;
-  margin-bottom: 15px;
-}
-
-.error-container p {
-  color: #7f8c8d;
-  margin-bottom: 30px;
 }
 
 .hero-details {

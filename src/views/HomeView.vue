@@ -1,7 +1,6 @@
 <template>
   <div class="home">
     <div class="container">
-
       <div class="features-section">
         <h2 class="section-title">Funcionalidades</h2>
         <div class="features-grid">
@@ -56,6 +55,7 @@
 
 <script>
 import { heroesApi, superpowersApi } from '@/services/api'
+import { notify } from "@kyvg/vue3-notification";
 
 export default {
   name: 'HomeView',
@@ -88,12 +88,15 @@ export default {
 
         const superpowersResponse = await superpowersApi.getAll()
         this.superpowerCount = superpowersResponse.data.length || 0
-        
       } catch (error) {
-        console.error('Error loading stats:', error)
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error
+        })
 
         this.heroCount = 0
-        this.superpowerCount = 10
+        this.superpowerCount = 0
         this.totalSuperpowers = 0
       }
     }

@@ -119,10 +119,6 @@
               {{ submitting ? 'Salvando...' : 'Salvar Herói' }}
             </button>
           </div>
-
-          <div v-if="generalError" class="error-message" style="margin-bottom: 15px;">
-            {{ generalError }}
-          </div>
         </form>
       </div>
     </div>
@@ -131,6 +127,7 @@
 
 <script>
 import { heroesApi, superpowersApi } from '@/services/api'
+import { notify } from "@kyvg/vue3-notification";
 
 export default {
   name: 'CreateHeroView',
@@ -148,7 +145,6 @@ export default {
       loadingSuperpowers: false,
       submitting: false,
       errors: {},
-      generalError: ''
     }
   },
   async mounted() {
@@ -161,7 +157,12 @@ export default {
         const response = await superpowersApi.getAll()
         this.superpowers = response.data || []
       } catch (error) {
-        console.error('Error loading superpowers:', error)
+        notify({
+          type: 'error',
+          title: 'Erro',
+          text: error.message || error
+        })
+
         this.superpowers = []
       } finally {
         this.loadingSuperpowers = false
@@ -170,7 +171,6 @@ export default {
 
     validateForm() {
       this.errors = {}
-      this.generalError = ''
 
       // Nome Civil
       if (!this.form.name || this.form.name.trim() === '') {
@@ -225,7 +225,6 @@ export default {
       }
 
       this.submitting = true
-      this.generalError = ''
 
       try {
         const heroData = {
@@ -237,12 +236,15 @@ export default {
           superpowersIds: this.form.superpowersIds
         }
 
-        await heroesApi.create(heroData)
+        const response = await heroesApi.create(heroData)
+        notify({
+          type: 'success',
+          title: 'Sucesso',
+          text: response.data.message
+        })
         this.$router.push('/heroes')
 
       } catch (error) {
-        console.error("Error creating hero:", error)
-
         if (error.details) {
           for (const key in error.details) {
             const fieldName = key.toLowerCase();
@@ -261,7 +263,11 @@ export default {
             }
           }
         } else {
-          this.generalError = error.message;
+          notify({
+            type: 'error',
+            title: 'Erro',
+            text: error.message || error
+          })
         }
       } finally {
         this.submitting = false
